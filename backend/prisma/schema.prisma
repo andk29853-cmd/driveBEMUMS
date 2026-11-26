@@ -1,0 +1,196 @@
+// =====================================================================
+//  DriveBEM — Cloud Drive & Manajemen Arsip Terpusat
+//  Prisma schema (PostgreSQL / Supabase)
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Supabase: isi DIRECT_URL dengan koneksi langsung (port 5432) untuk migrasi.
+  // Untuk PostgreSQL lokal cukup samakan dengan DATABASE_URL.
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------
+//  Enums
+// ---------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  SECRETARY
+  MEMBER
+}
+
+enum StorageProvider {
+  LOCAL
+  CLOUDFLARE_R2
+  BACKBLAZE_B2
+  STORJ
+  MINIO
+  AWS_S3
+  OTHER
+}
+
+enum FileStatus {
+  PENDING // presigned URL sudah dibuat, menunggu upload selesai
+  READY // upload terverifikasi & kuota sudah dihitung
+}
+
+enum FileCategory {
+  PDF
+  DOCUMENT
+  IMAGE
+  VIDEO
+  AUDIO
+  ARCHIVE
+  OTHER
+}
+
+// ---------------------------------------------------------------------
+//  User
+// ---------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(MEMBER)
+  isActive     Boolean  @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Folder utama yang boleh diakses (khusus MEMBER)
+  folders        Folder[]      @relation("FolderMembers")
+  createdFolders Folder[]      @relation("FolderCreator")
+  files          File[]        @relation("FileUploader")
+  activities     ActivityLog[]
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------
+//  StorageBucket — konfigurasi Multi-Bucket (S3-compatible / Local Disk)
+// ---------------------------------------------------------------------
+
+model StorageBucket {
+  id                String          @id @default(cuid())
+  name              String
+  provider          StorageProvider @default(OTHER)
+  endpoint          String?
+  region            String          @default("auto")
+  accessKey         String?         @map("access_key") // terenkripsi AES-256-GCM
+  secretKey         String?         @map("secret_key") // terenkripsi AES-256-GCM
+  bucketName        String          @map("bucket_name")
+  forcePathStyle    Boolean         @default(true) @map("force_path_style")
+  maxCapacityBytes  BigInt          @map("max_capacity_bytes")
+  usedCapacityBytes BigInt          @default(0) @map("used_capacity_bytes")
+  isActive          Boolean         @default(true) @map("is_active")
+  priority          Int             @default(0) // makin besar makin diprioritaskan
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  files File[]
+
+  @@map("storage_buckets")
+}
+
+// ---------------------------------------------------------------------
+//  Folder — Folder Utama (root, punya kuota) & subfolder bersarang
+// ---------------------------------------------------------------------
+
+model Folder {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  color           String?  @default("blue")
+  isRoot          Boolean  @default(false) @map("is_root")
+  // Kuota hanya berlaku pada folder utama (isRoot = true). null = tanpa batas.
+  quotaLimitBytes BigInt?  @map("quota_limit_bytes")
+  usedBytes       BigInt   @default(0) @map("used_bytes")
+
+  parentId String? @map("parent_id")
+  parent   Folder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children Folder[] @relation("FolderTree")
+
+  // Folder utama induk (null untuk folder utama itu sendiri)
+  rootId      String?  @map("root_id")
+  root        Folder?  @relation("FolderRoot", fields: [rootId], references: [id], onDelete: Cascade)
+  descendants Folder[] @relation("FolderRoot")
+
+  createdById String? @map("created_by_id")
+  createdBy   User?   @relation("FolderCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  members   User[] @relation("FolderMembers")
+  files     File[] @relation("FolderFiles")
+  rootFiles File[] @relation("RootFolderFiles")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([parentId])
+  @@index([rootId])
+  @@index([isRoot])
+  @@map("folders")
+}
+
+// ---------------------------------------------------------------------
+//  File
+// ---------------------------------------------------------------------
+
+model File {
+  id        String       @id @default(cuid())
+  name      String
+  mimeType  String       @default("application/octet-stream") @map("mime_type")
+  sizeBytes BigInt       @map("size_bytes")
+  category  FileCategory @default(OTHER)
+  objectKey String       @map("object_key")
+  status    FileStatus   @default(PENDING)
+
+  folderId String @map("folder_id")
+  folder   Folder @relation("FolderFiles", fields: [folderId], references: [id], onDelete: Cascade)
+
+  // Folder utama tempat kuota dihitung
+  rootFolderId String @map("root_folder_id")
+  rootFolder   Folder @relation("RootFolderFiles", fields: [rootFolderId], references: [id], onDelete: Cascade)
+
+  bucketId String        @map("bucket_id")
+  bucket   StorageBucket @relation(fields: [bucketId], references: [id], onDelete: Restrict)
+
+  uploadedById String? @map("uploaded_by_id")
+  uploadedBy   User?   @relation("FileUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([folderId])
+  @@index([rootFolderId])
+  @@index([bucketId])
+  @@index([status, createdAt])
+  @@index([name])
+  @@map("files")
+}
+
+// ---------------------------------------------------------------------
+//  ActivityLog — jejak audit setiap aksi
+// ---------------------------------------------------------------------
+
+model ActivityLog {
+  id         String   @id @default(cuid())
+  action     String // contoh: FILE_UPLOAD, FILE_DELETE, FOLDER_CREATE, QUOTA_UPDATE
+  entityType String   @map("entity_type") // FILE | FOLDER | BUCKET | USER | AUTH
+  entityId   String?  @map("entity_id")
+  details    Json?
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("activity_logs")
+}
