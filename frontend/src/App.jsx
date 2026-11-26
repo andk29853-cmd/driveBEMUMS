@@ -11,7 +11,6 @@ import DashboardPage from './pages/DashboardPage';
 import FolderDetailPage from './pages/FolderDetailPage';
 import RecentPage from './pages/RecentPage';
 import BucketsPage from './pages/BucketsPage';
-import UsersPage from './pages/UsersPage';
 import SettingsPage from './pages/SettingsPage';
 
 function AppShell({ children }) {
@@ -62,7 +61,6 @@ export default function App() {
                   <Route path="folders/:id" element={<FolderDetailPage />} />
                   <Route path="recent" element={<RecentPage />} />
                   <Route path="buckets" element={<AdminRoute><BucketsPage /></AdminRoute>} />
-                  <Route path="users" element={<AdminRoute><UsersPage /></AdminRoute>} />
                   <Route path="settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />

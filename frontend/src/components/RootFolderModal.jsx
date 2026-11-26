@@ -141,45 +141,6 @@ export default function RootFolderModal({ open, onClose, folder, onSaved }) {
             </p>
           )}
         </div>
-
-        <div>
-          <div className="mb-1.5 flex items-center justify-between">
-            <label className="label !mb-0">Anggota yang Diizinkan</label>
-            <span className="text-xs text-slate-500">{form.memberIds.length} dipilih</span>
-          </div>
-          <p className="mb-2 text-xs text-slate-500">Admin & Sekretaris otomatis memiliki akses ke semua folder.</p>
-          <div className="relative mb-2">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input className="input pl-9" placeholder="Cari anggota..." value={q} onChange={(e) => setQ(e.target.value)} />
-          </div>
-          <div className="max-h-48 space-y-1 overflow-y-auto rounded-xl border border-slate-200 p-1.5 dark:border-slate-700">
-            {filteredUsers.length === 0 && <p className="p-3 text-center text-sm text-slate-500">Belum ada anggota.</p>}
-            {filteredUsers.map((u) => {
-              const checked = form.memberIds.includes(u.id);
-              return (
-                <label
-                  key={u.id}
-                  className={clsx(
-                    'flex cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2 transition',
-                    checked ? 'bg-brand-50 dark:bg-brand-500/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800'
-                  )}
-                >
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                    checked={checked}
-                    onChange={() => toggleMember(u.id)}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{u.name}</p>
-                    <p className="truncate text-xs text-slate-500">{u.email}</p>
-                  </div>
-                  <span className="text-xs text-slate-400">{ROLE_LABEL[u.role]}</span>
-                </label>
-              );
-            })}
-          </div>
-        </div>
       </form>
     </Modal>
   );

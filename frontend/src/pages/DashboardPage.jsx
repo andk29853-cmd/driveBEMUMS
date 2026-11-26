@@ -257,7 +257,7 @@ export default function DashboardPage() {
                 {overview.counts?.activeBuckets ?? 0} Bucket Aktif
               </p>
               <p className="mt-1 text-xs text-brand-600 dark:text-brand-400">
-                {overview.counts?.users ?? 0} pengguna terdaftar · Kelola bucket →
+                Kelola storage bucket →
               </p>
             </div>
           ) : (

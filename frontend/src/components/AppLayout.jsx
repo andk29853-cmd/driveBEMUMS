@@ -4,7 +4,6 @@ import {
   FolderKanban,
   Clock,
   HardDrive,
-  Users,
   Settings,
   Sun,
   Moon,
@@ -53,7 +52,6 @@ export default function AppLayout() {
     ...(isManager
       ? [
           { to: '/buckets', label: 'Manajemen Bucket', icon: HardDrive },
-          { to: '/users', label: 'Manajemen Pengguna', icon: Users },
           { to: '/settings', label: 'Pengaturan', icon: Settings },
         ]
       : []),
