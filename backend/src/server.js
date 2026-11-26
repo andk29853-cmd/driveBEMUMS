@@ -90,15 +90,19 @@ async function cleanupStaleUploads() {
   }
 }
 
-app.listen(env.port, async () => {
-  console.log(`\n🚀 DriveBEM API berjalan di http://localhost:${env.port}`);
-  console.log(`   Local Disk Fallback: ${env.localStorage.enabled ? `AKTIF (${env.localStorage.path})` : 'nonaktif'}\n`);
-  try {
-    await storageRouter.ensureLocalBucket();
-    if (env.localStorage.enabled) fs.mkdirSync(env.localStorage.path, { recursive: true });
-  } catch (err) {
-    console.error('⚠️  Tidak dapat terhubung ke database:', err.message.split('\n').slice(-1)[0]);
-  }
-  cleanupStaleUploads();
-  setInterval(cleanupStaleUploads, 3600 * 1000).unref();
-});
+if (!process.env.VERCEL) {
+  app.listen(env.port, async () => {
+    console.log(`\n🚀 DriveBEM API berjalan di http://localhost:${env.port}`);
+    console.log(`   Local Disk Fallback: ${env.localStorage.enabled ? `AKTIF (${env.localStorage.path})` : 'nonaktif'}\n`);
+    try {
+      await storageRouter.ensureLocalBucket();
+      if (env.localStorage.enabled) fs.mkdirSync(env.localStorage.path, { recursive: true });
+    } catch (err) {
+      console.error('⚠️  Tidak dapat terhubung ke database:', err.message.split('\n').slice(-1)[0]);
+    }
+    cleanupStaleUploads();
+    setInterval(cleanupStaleUploads, 3600 * 1000).unref();
+  });
+}
+
+export default app;
