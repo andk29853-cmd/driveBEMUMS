@@ -166,7 +166,7 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">Semua Folder Utama</h1>
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            Pilih folder divisi / kementerian untuk mengelola dokumen atau memantau pemakaian kuota.
+            Pilih folder kabinet atau kementerian untuk menyimpan, mencari, dan mengelola arsip dokumen.
           </p>
         </div>
 
