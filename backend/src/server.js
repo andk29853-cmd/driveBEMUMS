@@ -16,6 +16,7 @@ import bucketRoutes from './routes/buckets.routes.js';
 import userRoutes from './routes/users.routes.js';
 import statsRoutes from './routes/stats.routes.js';
 import activityRoutes from './routes/activity.routes.js';
+import settingsRoutes from './routes/settings.routes.js';
 import localStorageRoutes from './routes/localStorage.routes.js';
 
 // BigInt (kolom byte) → Number saat dikirim sebagai JSON
@@ -52,6 +53,7 @@ app.get('/api/health', async (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/settings', settingsRoutes);
 app.use('/api/folders', optionalAuth, folderRoutes);
 app.use('/api/files', requireAuth, fileRoutes);
 app.use('/api/stats', requireAuth, statsRoutes);

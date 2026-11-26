@@ -194,3 +194,15 @@ model ActivityLog {
   @@index([userId])
   @@map("activity_logs")
 }
+
+// ---------------------------------------------------------------------
+//  AppSetting — konfigurasi dinamis aplikasi (misal Nama Kabinet)
+// ---------------------------------------------------------------------
+
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_settings")
+}

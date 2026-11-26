@@ -5,18 +5,31 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [appSettings, setAppSettings] = useState({
+    cabinetName: 'Kabinet Kolektiva BEM UMS 2026',
+    appTagline: 'Cloud Arsip Terpusat',
+  });
   const [loading, setLoading] = useState(true);
+
+  const refreshSettings = useCallback(async () => {
+    try {
+      const res = await api.get('/settings');
+      if (res?.settings) setAppSettings(res.settings);
+    } catch {
+      /* gunakan default */
+    }
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
-      const { user } = await api.get('/auth/me');
+      const [{ user }] = await Promise.all([api.get('/auth/me'), refreshSettings()]);
       setUser(user);
     } catch {
       setUser(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refreshSettings]);
 
   useEffect(() => {
     refresh();
@@ -48,7 +61,22 @@ export function AuthProvider({ children }) {
   const isManager = user?.role === 'ADMIN' || user?.role === 'SECRETARY';
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, loginWithKey, logout, refresh, isLoggedIn, isManager }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        appSettings,
+        setAppSettings,
+        refreshSettings,
+        loading,
+        login,
+        loginWithKey,
+        logout,
+        refresh,
+        isLoggedIn,
+        isManager,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

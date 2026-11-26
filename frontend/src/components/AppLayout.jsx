@@ -24,7 +24,7 @@ import Dropdown from './Dropdown';
 import UploadPanel from './UploadPanel';
 
 export default function AppLayout() {
-  const { user, logout, refresh, isLoggedIn, isManager } = useAuth();
+  const { user, appSettings, logout, refresh, isLoggedIn, isManager } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -86,8 +86,8 @@ export default function AppLayout() {
                 <h1 className="text-base font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
                   Drive BEM UMS
                 </h1>
-                <p className="hidden text-[11px] font-medium text-slate-500 dark:text-slate-400 sm:block">
-                  Cloud Arsip Terpusat
+                <p className="hidden max-w-[220px] truncate text-[11px] font-medium text-slate-500 dark:text-slate-400 sm:block">
+                  {appSettings?.cabinetName || 'Cloud Arsip Terpusat'}
                 </p>
               </div>
             </Link>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { User, Lock, Sun, Moon, Activity } from 'lucide-react';
+import { User, Lock, Sun, Moon, Activity, Building2 } from 'lucide-react';
 import clsx from 'clsx';
 import { api } from '../lib/api';
 import { formatDateTime, ROLE_LABEL } from '../lib/format';
@@ -24,12 +24,16 @@ const ACTION_LABEL = {
   USER_CREATE: 'Menambah pengguna',
   USER_UPDATE: 'Memperbarui pengguna',
   USER_DELETE: 'Menghapus pengguna',
+  SETTINGS_UPDATE: 'Memperbarui nama kabinet',
 };
 
 export default function SettingsPage() {
-  const { user, setUser, isManager } = useAuth();
+  const { user, setUser, appSettings, setAppSettings, isManager } = useAuth();
   const { theme, setTheme } = useTheme();
   const toast = useToast();
+
+  const [cabinetName, setCabinetName] = useState(appSettings?.cabinetName || '');
+  const [savingCabinet, setSavingCabinet] = useState(false);
 
   const [name, setName] = useState(user?.name || '');
   const [savingProfile, setSavingProfile] = useState(false);
@@ -45,12 +49,31 @@ export default function SettingsPage() {
   }, [user]);
 
   useEffect(() => {
+    setCabinetName(appSettings?.cabinetName || '');
+  }, [appSettings]);
+
+  useEffect(() => {
     api
       .get('/activity', { limit: 40 })
       .then((r) => setLogs(r.logs))
       .catch(() => {})
       .finally(() => setLoadingLogs(false));
   }, []);
+
+  const handleSaveCabinet = async (e) => {
+    e.preventDefault();
+    if (!cabinetName.trim()) return;
+    setSavingCabinet(true);
+    try {
+      const res = await api.patch('/settings', { cabinetName: cabinetName.trim() });
+      setAppSettings(res.settings);
+      toast.success('Nama kabinet berhasil diperbarui.');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setSavingCabinet(false);
+    }
+  };
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
@@ -92,8 +115,41 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Profil & Tema */}
+        {/* Profil, Identitas Kabinet & Tema */}
         <div className="space-y-6">
+          {isManager && (
+            <form onSubmit={handleSaveCabinet} className="card space-y-4 p-5">
+              <div className="flex items-center gap-2.5">
+                <Building2 className="h-5 w-5 text-brand-600" />
+                <div>
+                  <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+                    Identitas Kabinet (Masa Transisi)
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Ubah nama kabinet saat pergantian periode BEM UMS tanpa mengubah struktur file.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Nama Kabinet / Periode Aktif</label>
+                <input
+                  className="input"
+                  placeholder="contoh: Kabinet Kolektiva BEM UMS 2026"
+                  value={cabinetName}
+                  onChange={(e) => setCabinetName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <button type="submit" disabled={savingCabinet} className="btn-primary">
+                  {savingCabinet ? 'Menyimpan...' : 'Simpan Nama Kabinet'}
+                </button>
+              </div>
+            </form>
+          )}
+
           <form onSubmit={handleSaveProfile} className="card space-y-4 p-5">
             <div className="flex items-center gap-2.5">
               <User className="h-5 w-5 text-brand-600" />

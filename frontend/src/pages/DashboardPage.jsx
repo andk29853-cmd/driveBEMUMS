@@ -33,7 +33,7 @@ import PromptModal from '../components/PromptModal';
 import FileExplorer from '../components/FileExplorer';
 
 export default function DashboardPage() {
-  const { user, isManager } = useAuth();
+  const { user, appSettings, isManager } = useAuth();
   const { setCurrentFolder, openFilePicker } = useUpload();
   const toast = useToast();
   const confirm = useConfirm();
@@ -164,7 +164,14 @@ export default function DashboardPage() {
       {/* Header & Global Instant Search */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">Semua Folder Utama</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white sm:text-2xl">Semua Folder Utama</h1>
+            {appSettings?.cabinetName && (
+              <span className="badge bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+                {appSettings.cabinetName}
+              </span>
+            )}
+          </div>
           <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
             Pilih folder kabinet atau kementerian untuk menyimpan, mencari, dan mengelola arsip dokumen.
           </p>

@@ -17,7 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
 export default function LoginPage() {
-  const { user, loginWithKey } = useAuth();
+  const { user, appSettings, loginWithKey } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -56,7 +56,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <h1 className="text-xl font-bold">Drive BEM UMS</h1>
-                <p className="text-xs text-brand-100">Kabinet Kolektiva · Arsip Terpusat</p>
+                <p className="text-xs text-brand-100">{appSettings?.cabinetName || 'Kabinet Kolektiva'} · Arsip Terpusat</p>
               </div>
             </div>
 
@@ -82,7 +82,7 @@ export default function LoginPage() {
             <div className="flex items-start gap-3 rounded-2xl bg-white/10 p-3 backdrop-blur-xs">
               <FolderKanban className="mt-0.5 h-4 w-4 shrink-0 text-brand-200" />
               <div>
-                <p className="font-semibold text-white">Kuota Dinamis Kabinet Kolektiva</p>
+                <p className="font-semibold text-white">Kuota Dinamis {appSettings?.cabinetName || 'Kabinet'}</p>
                 <p className="text-brand-100">
                   Jatah 25 GB per unit/kementerian yang dapat ditambah atau disesuaikan kapan saja oleh Admin.
                 </p>
