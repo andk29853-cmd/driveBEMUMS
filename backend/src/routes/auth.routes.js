@@ -26,6 +26,24 @@ router.post('/login', async (req, res) => {
   res.json({ token: signToken(user), user: publicUser(user) });
 });
 
+router.post('/admin-key', async (req, res) => {
+  const { key } = z.object({ key: z.string().min(1, 'Kata kunci wajib diisi') }).parse(req.body);
+  const expectedKey = process.env.ADMIN_ACCESS_KEY || 'AdminBEM!';
+  if (key !== expectedKey) {
+    throw unauthorized('Kata kunci Admin tidak sesuai.');
+  }
+
+  const admin = await prisma.user.findFirst({
+    where: { role: 'ADMIN', isActive: true },
+    orderBy: { createdAt: 'asc' },
+  });
+  if (!admin) throw unauthorized('Akun Admin tidak ditemukan.');
+
+  await prisma.user.update({ where: { id: admin.id }, data: { lastLoginAt: new Date() } });
+  logActivity(admin.id, 'LOGIN', 'AUTH', admin.id, { method: 'admin-key' });
+  res.json({ token: signToken(admin), user: publicUser(admin) });
+});
+
 router.get('/me', requireAuth, async (req, res) => {
   res.json({ user: req.user });
 });

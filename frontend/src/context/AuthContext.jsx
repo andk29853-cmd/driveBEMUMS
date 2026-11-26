@@ -32,6 +32,13 @@ export function AuthProvider({ children }) {
     return user;
   };
 
+  const loginWithKey = async (key) => {
+    const { token, user } = await api.post('/auth/admin-key', { key });
+    setToken(token);
+    setUser(user);
+    return user;
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -41,7 +48,7 @@ export function AuthProvider({ children }) {
   const isManager = user?.role === 'ADMIN' || user?.role === 'SECRETARY';
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, logout, refresh, isLoggedIn, isManager }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, loginWithKey, logout, refresh, isLoggedIn, isManager }}>
       {children}
     </AuthContext.Provider>
   );
