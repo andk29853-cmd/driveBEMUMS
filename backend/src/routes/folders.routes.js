@@ -63,6 +63,7 @@ router.use(requireAuth);
 router.get('/:id', async (req, res) => {
   const { folder, rootId } = await assertFolderAccess(req.user, req.params.id);
 
+  const manager = isManager(req.user);
   const [children, files, root, breadcrumb] = await Promise.all([
     prisma.folder.findMany({
       where: { parentId: folder.id },
@@ -92,8 +93,12 @@ router.get('/:id', async (req, res) => {
         bucket: { select: { id: true, name: true, provider: true } },
       },
     }),
-    prisma.folder.findUnique({ where: { id: rootId }, select: rootSelect(isManager(req.user)) }),
-    getBreadcrumb(folder),
+    folder.isRoot && !manager
+      ? Promise.resolve(folder)
+      : prisma.folder.findUnique({ where: { id: rootId }, select: rootSelect(manager) }),
+    folder.isRoot
+      ? Promise.resolve([{ id: folder.id, name: folder.name, isRoot: true }])
+      : getBreadcrumb(folder),
   ]);
 
   res.json({
