@@ -28,7 +28,8 @@ router.post('/login', async (req, res) => {
 
 router.post('/admin-key', async (req, res) => {
   const { key } = z.object({ key: z.string().min(1, 'Kata kunci wajib diisi') }).parse(req.body);
-  const expectedKey = process.env.ADMIN_ACCESS_KEY || 'AdminBEM!';
+  const customKey = await prisma.appSetting.findUnique({ where: { key: 'adminAccessKey' } });
+  const expectedKey = customKey?.value || process.env.ADMIN_ACCESS_KEY || 'AdminBEM!';
   if (key !== expectedKey) {
     throw unauthorized('Kata kunci Admin tidak sesuai.');
   }

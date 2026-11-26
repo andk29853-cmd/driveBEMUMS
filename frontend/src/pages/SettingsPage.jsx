@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { User, Lock, Sun, Moon, Activity, Building2 } from 'lucide-react';
+import { Lock, Sun, Moon, Activity, Building2 } from 'lucide-react';
 import clsx from 'clsx';
 import { api } from '../lib/api';
-import { formatDateTime, ROLE_LABEL } from '../lib/format';
+import { formatDateTime } from '../lib/format';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useToast } from '../context/ToastContext';
 
 const ACTION_LABEL = {
   LOGIN: 'Login ke sistem',
-  PASSWORD_CHANGE: 'Mengubah password',
+  PASSWORD_CHANGE: 'Mengubah kata kunci Admin',
   FILE_UPLOAD: 'Mengunggah file',
   FILE_DOWNLOAD: 'Mengunduh file',
   FILE_RENAME: 'Mengganti nama file',
@@ -28,25 +28,18 @@ const ACTION_LABEL = {
 };
 
 export default function SettingsPage() {
-  const { user, setUser, appSettings, setAppSettings, isManager } = useAuth();
+  const { appSettings, setAppSettings, isManager } = useAuth();
   const { theme, setTheme } = useTheme();
   const toast = useToast();
 
   const [cabinetName, setCabinetName] = useState(appSettings?.cabinetName || '');
   const [savingCabinet, setSavingCabinet] = useState(false);
 
-  const [name, setName] = useState(user?.name || '');
-  const [savingProfile, setSavingProfile] = useState(false);
-
-  const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '' });
-  const [savingPass, setSavingPass] = useState(false);
+  const [keys, setKeys] = useState({ currentKey: '', newKey: '' });
+  const [savingKey, setSavingKey] = useState(false);
 
   const [logs, setLogs] = useState([]);
   const [loadingLogs, setLoadingLogs] = useState(true);
-
-  useEffect(() => {
-    setName(user?.name || '');
-  }, [user]);
 
   useEffect(() => {
     setCabinetName(appSettings?.cabinetName || '');
@@ -75,33 +68,18 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveProfile = async (e) => {
+  const handleChangeKey = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return;
-    setSavingProfile(true);
+    if (keys.newKey.trim().length < 4) return toast.warning('Kata kunci baru minimal 4 karakter.');
+    setSavingKey(true);
     try {
-      const res = await api.patch('/auth/me', { name: name.trim() });
-      setUser(res.user);
-      toast.success('Profil berhasil diperbarui.');
+      await api.post('/settings/admin-key', { currentKey: keys.currentKey, newKey: keys.newKey.trim() });
+      setKeys({ currentKey: '', newKey: '' });
+      toast.success('Kata kunci Admin berhasil diperbarui.');
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setSavingProfile(false);
-    }
-  };
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    if (passwords.newPassword.length < 6) return toast.warning('Password baru minimal 6 karakter.');
-    setSavingPass(true);
-    try {
-      await api.post('/auth/change-password', passwords);
-      setPasswords({ currentPassword: '', newPassword: '' });
-      toast.success('Password berhasil diperbarui.');
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setSavingPass(false);
+      setSavingKey(false);
     }
   };
 
@@ -150,35 +128,6 @@ export default function SettingsPage() {
             </form>
           )}
 
-          <form onSubmit={handleSaveProfile} className="card space-y-4 p-5">
-            <div className="flex items-center gap-2.5">
-              <User className="h-5 w-5 text-brand-600" />
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Profil Akun</h2>
-            </div>
-
-            <div>
-              <label className="label">Nama Lengkap</label>
-              <input className="input" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="label">Email</label>
-                <input className="input opacity-70" value={user?.email || ''} disabled />
-              </div>
-              <div>
-                <label className="label">Role</label>
-                <input className="input opacity-70" value={ROLE_LABEL[user?.role] || ''} disabled />
-              </div>
-            </div>
-
-            <div className="flex justify-end">
-              <button type="submit" disabled={savingProfile} className="btn-primary">
-                {savingProfile ? 'Menyimpan...' : 'Simpan Profil'}
-              </button>
-            </div>
-          </form>
-
           {/* Preferensi Tampilan */}
           <div className="card space-y-4 p-5">
             <div className="flex items-center gap-2.5">
@@ -223,40 +172,40 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Ganti Password */}
-          <form onSubmit={handleChangePassword} className="card space-y-4 p-5">
+          {/* Ubah Kata Kunci Admin */}
+          <form onSubmit={handleChangeKey} className="card space-y-4 p-5">
             <div className="flex items-center gap-2.5">
               <Lock className="h-5 w-5 text-brand-600" />
-              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Ubah Password</h2>
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Ubah Kata Kunci Admin</h2>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="label">Password Lama</label>
+                <label className="label">Kata Kunci Lama</label>
                 <input
                   type="password"
                   className="input"
-                  value={passwords.currentPassword}
-                  onChange={(e) => setPasswords((p) => ({ ...p, currentPassword: e.target.value }))}
+                  value={keys.currentKey}
+                  onChange={(e) => setKeys((p) => ({ ...p, currentKey: e.target.value }))}
                   required
                 />
               </div>
               <div>
-                <label className="label">Password Baru</label>
+                <label className="label">Kata Kunci Baru</label>
                 <input
                   type="password"
                   className="input"
-                  placeholder="Minimal 6 karakter"
-                  value={passwords.newPassword}
-                  onChange={(e) => setPasswords((p) => ({ ...p, newPassword: e.target.value }))}
+                  placeholder="Minimal 4 karakter"
+                  value={keys.newKey}
+                  onChange={(e) => setKeys((p) => ({ ...p, newKey: e.target.value }))}
                   required
                 />
               </div>
             </div>
 
             <div className="flex justify-end">
-              <button type="submit" disabled={savingPass} className="btn-secondary">
-                {savingPass ? 'Memproses...' : 'Perbarui Password'}
+              <button type="submit" disabled={savingKey} className="btn-secondary">
+                {savingKey ? 'Memproses...' : 'Perbarui Kata Kunci'}
               </button>
             </div>
           </form>
